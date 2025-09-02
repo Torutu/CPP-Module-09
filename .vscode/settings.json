@@ -59,6 +59,8 @@
         "text_encoding": "cpp",
         "cinttypes": "cpp",
         "variant": "cpp",
-        "*.tpp": "cpp"
+        "*.tpp": "cpp",
+        "cerrno": "cpp",
+        "set": "cpp"
     }
 }
