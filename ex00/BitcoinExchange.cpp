@@ -1,24 +1,20 @@
 #include "BitcoinExchange.hpp"
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <cstdlib> // for strtod
 
+/* CONSTRUCTORS - DETRUCTORS */
 BitcoinExchange::BitcoinExchange() {}
-
 BitcoinExchange::BitcoinExchange(const BitcoinExchange& other) {
     _bitcoinPrices = other._bitcoinPrices;
 }
-
 BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& other) {
     if (this != &other) {
         _bitcoinPrices = other._bitcoinPrices;
     }
     return *this;
 }
-
 BitcoinExchange::~BitcoinExchange() {}
+/******************************************************************************/
 
+// open csv file and read
 void BitcoinExchange::loadDatabase(const std::string& filename) {
     std::ifstream file(filename.c_str());
     if (!file.is_open()) {
@@ -27,7 +23,7 @@ void BitcoinExchange::loadDatabase(const std::string& filename) {
 
     std::string line;
     while (std::getline(file, line)) {
-        std::stringstream ss(line);
+        std::stringstream ss(line); // grab a line for example: 2011-01-03,0.95
         std::string date;
         float price;
         if (std::getline(ss, date, ',') && ss >> price) {
@@ -36,6 +32,7 @@ void BitcoinExchange::loadDatabase(const std::string& filename) {
     }
 }
 
+//open input.txt and read
 void BitcoinExchange::processInput(const std::string& filename) {
     std::ifstream file(filename.c_str());
     if (!file.is_open()) {
@@ -51,13 +48,11 @@ void BitcoinExchange::processInput(const std::string& filename) {
             // Trim whitespace
             date.erase(date.find_last_not_of(' ') + 1);
             valueStr.erase(0, valueStr.find_first_not_of(' '));
-
             // Validate date
             if (!isValidDate(date)) {
                 std::cerr << "Error: bad input => " << date << std::endl;
                 continue;
             }
-
             // Validate value
             char* endPtr;
             float value = std::strtof(valueStr.c_str(), &endPtr);
@@ -65,7 +60,6 @@ void BitcoinExchange::processInput(const std::string& filename) {
                 std::cerr << "Error: invalid value => " << valueStr << std::endl;
                 continue;
             }
-
             // Find closest date and calculate Bitcoin value
             std::string closestDate = findClosestDate(date);
             float bitcoinValue = value * _bitcoinPrices[closestDate];
@@ -87,12 +81,18 @@ bool BitcoinExchange::isValidValue(float value) const {
 }
 
 std::string BitcoinExchange::findClosestDate(const std::string& date) const {
-    std::map<std::string, float>::const_iterator it = _bitcoinPrices.lower_bound(date);
-    if (it == _bitcoinPrices.begin() && it->first != date) {
+    auto it = _bitcoinPrices.lower_bound(date);
+
+    if (it != _bitcoinPrices.end() && it->first == date) {
+        // std::cout << "exact date\n";
         return it->first;
     }
-    if (it->first != date) {
-        --it;
+    if (it == _bitcoinPrices.begin()) {
+        // std::cout << "before or earliest date\n";
+        return it->first;
     }
+    // std::cout << "closest earlier date\n";
+    --it;
     return it->first;
 }
+

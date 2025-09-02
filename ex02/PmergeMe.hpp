@@ -8,63 +8,33 @@
 #include <vector>
 #include <deque>
 
-// Ford-Johnson algorithm for sorting
-template <typename T>
-void insertionSort(T& container, int left, int right) {
-    for (int i = left + 1; i <= right; ++i) {
-        int key = container[i];
-        int j = i - 1;
-        while (j >= left && container[j] > key) {
-            container[j + 1] = container[j];
-            --j;
-        }
-        container[j + 1] = key;
-    }
-}
+class PmergeMe {
+private:
 
-// Merge
-template <typename T>
-void merge(T& container, int left, int mid, int right) {
-    int n1 = mid - left + 1;
-    int n2 = right - mid;
-    
-    T leftPart(container.begin() + left, container.begin() + mid + 1);
-    T rightPart(container.begin() + mid + 1, container.begin() + right + 1);
+    template <typename T>
+    void insertionSort(T& container, int left, int right);
 
-    int i = 0, j = 0, k = left;
-    while (i < n1 && j < n2) {
-        if (leftPart[i] <= rightPart[j]) {
-            container[k++] = leftPart[i++];
-        } else {
-            container[k++] = rightPart[j++];
-        }
-    }
+    template <typename T>
+    void merge(T& container, int left, int mid, int right);
 
-    while (i < n1) {
-        container[k++] = leftPart[i++];
-    }
+    template <typename T>
+    void mergeSort(T& container, int left, int right);
 
-    while (j < n2) {
-        container[k++] = rightPart[j++];
-    }
-}
+    template <typename T>
+    void fordJohnsonSort(T& container);
+public:
 
-// Merge Sort
-template <typename T>
-void mergeSort(T& container, int left, int right) {
-    if (right - left <= 10) {  // Threshold to switch to insertion sort
-        insertionSort(container, left, right);
-    } else {
-        int mid = left + (right - left) / 2;
-        mergeSort(container, left, mid);
-        mergeSort(container, mid + 1, right);
-        merge(container, left, mid, right);
-    }
-}
+    PmergeMe();
+    PmergeMe(const PmergeMe& other);
+    PmergeMe& operator=(const PmergeMe& other);
+    ~PmergeMe();
 
-// Ford-Johnson Sort
-template <typename T>
-void fordJohnsonSort(T& container) {
-    mergeSort(container, 0, container.size() - 1);
-}
+    static void parseInput(int argc, char** argv, std::vector<int>& vec, std::deque<int>& deq);
+    static void printSequence(const std::string& msg, const std::vector<int>& vec);
+
+    template <typename Container>
+    static double sortAndMeasure(Container& container);
+};
+
+#include "PmergeMe.tpp"
 #endif

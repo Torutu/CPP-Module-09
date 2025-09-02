@@ -1,4 +1,4 @@
-NAME = ex00
+NAME = btc
 CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++11
 
@@ -21,20 +21,7 @@ $(OBJ_DIR):
 
 $(NAME): $(OBJ_DIR) $(OBJ)
 	@ echo -ne "$(MAGENTA)Making $(NAME)"
-	@ ( \
-        trap 'echo -e "$(RED)Interrupted by user $(RESET)"; exit 1' INT; \
-        $(CC) $(CFLAGS) -o $(NAME) $(OBJ) & \
-        PID=$$!; \
-        while kill -0 $$PID 2>/dev/null; do \
-            echo -n "."; \
-            sleep 0.4; \
-            echo -n "."; \
-            sleep 0.6; \
-            echo -n "."; \
-            sleep 0.4; \
-        done; \
-        wait $$PID; \
-    )
+	@ ($(CC) $(CFLAGS) -o $(NAME) $(OBJ))
 	@ echo -ne "\n$(GREEN)Done!$(RED)\n"
 
 # Custom rule to ensure CC is used for compiling .cpp to .o and store in obj directory
