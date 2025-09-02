@@ -1,8 +1,31 @@
 #ifndef RPN_HPP
 #define RPN_HPP
 
+#include <iostream>
 #include <string>
+#include <stack>
+#include <stdexcept>
+#include <sstream>
+#include <cctype>
 
-int calculateRPN(const std::string& expression);
+class RPN {
+private:
+    std::string _expression;
+    std::stack<int> _stack;
+
+    bool isNumber(const std::string& token) const;
+
+public:
+
+    RPN();                              
+    RPN(const RPN& other);              
+    RPN& operator=(const RPN& other);   
+    ~RPN();                            
+
+    void setExpression(const std::string& expr);
+    std::string getExpression() const;
+
+    int calculate();
+};
 
 #endif

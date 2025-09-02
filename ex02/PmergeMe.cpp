@@ -1,16 +1,33 @@
 #include "PmergeMe.hpp"
-#include "PmergeMe.tpp" // includes your fordJohnsonSort template
+#include "PmergeMe.tpp"
 
+// ---------------- constructor and destructor ----------------
+PmergeMe::PmergeMe() {}
+PmergeMe::PmergeMe(const PmergeMe& other) {
+    _vec = other._vec;
+    _deq = other._deq;
+}
+PmergeMe& PmergeMe::operator=(const PmergeMe& other) {
+    if (this != &other) {
+        _vec = other._vec;
+        _deq = other._deq;
+    }
+    return *this;
+}
+PmergeMe::~PmergeMe() {}
+
+// ---------------- Static functions ----------------
 static bool isSingleNumber(const std::string& s) {
     if (s.empty()) return false;
     size_t start = 0;
-    if (s[0] == '+' || s[0] == '-') start = 1; // allow sign
+    if (s[0] == '+' || s[0] == '-') start = 1;
     for (size_t i = start; i < s.size(); ++i) {
         if (!std::isdigit(s[i])) return false;
     }
     return true;
 }
 
+// ---------------- Member functions ----------------
 void PmergeMe::parseInput(int argc, char** argv, std::vector<int>& vec, std::deque<int>& deq) {
     if (argc < 2)
         throw std::invalid_argument("Error: Invalid number of arguments.");

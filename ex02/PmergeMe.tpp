@@ -1,65 +1,48 @@
 #pragma once
 
-// Insertion Sort
 template <typename T>
-void PmergeMe::insertionSort(T& container, int left, int right) {
-    for (int i = left + 1; i <= right; ++i) {
-        auto key = container[i];
-        int j = i - 1;
-        while (j >= left && container[j] > key) {
-            container[j + 1] = container[j];
-            --j;
-        }
-        container[j + 1] = key;
-    }
+void insertIntoSorted(T& sorted, typename T::value_type elem) {
+    auto it = std::upper_bound(sorted.begin(), sorted.end(), elem);
+    sorted.insert(it, elem);
 }
 
-// Merge
 template <typename T>
-void PmergeMe::merge(T& container, int left, int mid, int right) {
-    int n1 = mid - left + 1;
-    int n2 = right - mid;
-
-    T leftPart(container.begin() + left, container.begin() + mid + 1);
-    T rightPart(container.begin() + mid + 1, container.begin() + right + 1);
-
-    int i = 0, j = 0, k = left;
-    while (i < n1 && j < n2) {
-        if (leftPart[i] <= rightPart[j]) {
-            container[k++] = leftPart[i++];
+void splitPairs(const T& elements, T& smaller, T& larger) {
+    for (size_t i = 0; i + 1 < elements.size(); i += 2) {
+        if (elements[i] < elements[i + 1]) {
+            smaller.push_back(elements[i]);
+            larger.push_back(elements[i + 1]);
         } else {
-            container[k++] = rightPart[j++];
+            smaller.push_back(elements[i + 1]);
+            larger.push_back(elements[i]);
         }
     }
-    while (i < n1) container[k++] = leftPart[i++];
-    while (j < n2) container[k++] = rightPart[j++];
-}
 
-// Merge Sort
-template <typename T>
-void PmergeMe::mergeSort(T& container, int left, int right) {
-    if (right - left <= 10) {  // threshold for insertion sort
-        insertionSort(container, left, right);
-    } else {
-        int mid = left + (right - left) / 2;
-        mergeSort(container, left, mid);
-        mergeSort(container, mid + 1, right);
-        merge(container, left, mid, right);
+    if (elements.size() % 2 != 0) {
+        smaller.push_back(elements.back());
     }
 }
 
-// Ford-Johnson Sort
+// Helper: Insert all smaller elements into sorted larger elements
 template <typename T>
-void PmergeMe::fordJohnsonSort(T& container) {
-    if (!container.empty())
-        mergeSort(container, 0, container.size() - 1);
+void insertSmallerIntoLarger(T& larger, const T& smaller) {
+    for (size_t i = 0; i < smaller.size(); ++i) {
+        insertIntoSorted(larger, smaller[i]);
+    }
 }
 
-template <typename Container>
-double PmergeMe::sortAndMeasure(Container& container) {
-    auto start = std::chrono::high_resolution_clock::now();
-    fordJohnsonSort(container);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    return duration.count() * 1e6; // microseconds
+// Ford-Johnson merge-insertion sort
+template <typename T>
+void fordJohnsonSort(T& elements) {
+    if (elements.size() <= 1) return;
+
+    T smaller;
+    T larger;
+
+    splitPairs(elements, smaller, larger);
+    //recursively sort the larger elements
+    fordJohnsonSort(larger);
+    insertSmallerIntoLarger(larger, smaller);
+    // Step 4: copy back into original container
+    elements = std::move(larger);
 }

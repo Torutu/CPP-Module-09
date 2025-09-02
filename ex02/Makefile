@@ -24,7 +24,6 @@ $(NAME): $(OBJ_DIR) $(OBJ)
 	@ $(CC) $(CFLAGS) -o $(NAME) $(OBJ)
 	@ echo -ne "\n$(GREEN)Done!$(RED)\n"
 
-# Custom rule to ensure CC is used for compiling .cpp to .o and store in obj directory
 $(OBJ_DIR)/%.o: %.cpp
 	@ $(CC) $(CFLAGS) -c $< -o $@
 

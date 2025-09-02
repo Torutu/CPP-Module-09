@@ -1,6 +1,7 @@
 #include "BitcoinExchange.hpp"
 
-/* CONSTRUCTORS - DETRUCTORS */
+// ---------------- constructor and destructor ----------------
+
 BitcoinExchange::BitcoinExchange() {}
 BitcoinExchange::BitcoinExchange(const BitcoinExchange& other) {
     _bitcoinPrices = other._bitcoinPrices;
@@ -12,9 +13,8 @@ BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& other) {
     return *this;
 }
 BitcoinExchange::~BitcoinExchange() {}
-/******************************************************************************/
 
-// open csv file and read
+// ---------------- Member functions ----------------
 void BitcoinExchange::loadDatabase(const std::string& filename) {
     std::ifstream file(filename.c_str());
     if (!file.is_open()) {
@@ -45,22 +45,22 @@ void BitcoinExchange::processInput(const std::string& filename) {
         std::stringstream ss(line);
         std::string date, valueStr;
         if (std::getline(ss, date, '|') && std::getline(ss, valueStr)) {
-            // Trim whitespace
+
             date.erase(date.find_last_not_of(' ') + 1);
             valueStr.erase(0, valueStr.find_first_not_of(' '));
-            // Validate date
+ 
             if (!isValidDate(date)) {
                 std::cerr << "Error: bad input => " << date << std::endl;
                 continue;
             }
-            // Validate value
+
             char* endPtr;
             float value = std::strtof(valueStr.c_str(), &endPtr);
             if (*endPtr != '\0' || !isValidValue(value)) {
                 std::cerr << "Error: invalid value => " << valueStr << std::endl;
                 continue;
             }
-            // Find closest date and calculate Bitcoin value
+
             std::string closestDate = findClosestDate(date);
             float bitcoinValue = value * _bitcoinPrices[closestDate];
             std::cout << date << " => " << value << " = " << bitcoinValue << std::endl;
