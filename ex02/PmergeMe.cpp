@@ -1,53 +1,23 @@
 #include "PmergeMe.hpp"
-#include "PmergeMe.tpp"
 
-// ---------------- constructor and destructor ----------------
+int PmergeMe::nbr_of_comps = 0;
+
 PmergeMe::PmergeMe() {}
-PmergeMe::PmergeMe(const PmergeMe& other) {
-    _vec = other._vec;
-    _deq = other._deq;
-}
-PmergeMe& PmergeMe::operator=(const PmergeMe& other) {
-    if (this != &other) {
-        _vec = other._vec;
-        _deq = other._deq;
-    }
+PmergeMe::PmergeMe(const PmergeMe& pm) { (void)pm; }
+PmergeMe& PmergeMe::operator=(const PmergeMe& pm)
+{
+    (void)pm;
     return *this;
 }
 PmergeMe::~PmergeMe() {}
 
-// ---------------- Static functions ----------------
-static bool isSingleNumber(const std::string& s) {
-    if (s.empty()) return false;
-    size_t start = 0;
-    if (s[0] == '+' || s[0] == '-') start = 1;
-    for (size_t i = start; i < s.size(); ++i) {
-        if (!std::isdigit(s[i])) return false;
-    }
-    return true;
-}
+/* Gives an index of the nth Jacobsthal number, starting from 1.
+ * round((pow(2, n) + pow(-1, n - 1)) / 3) means that it starts from 0.*/
+long _jacobsthal_number(long n) { return round((pow(2, n + 1) + pow(-1, n)) / 3); }
 
-// ---------------- Member functions ----------------
-void PmergeMe::parseInput(int argc, char** argv, std::vector<int>& vec, std::deque<int>& deq) {
-    if (argc < 2)
-        throw std::invalid_argument("Error: Invalid number of arguments.");
+void PmergeMe::sort_vec(std::vector<int>& vec) { _merge_insertion_sort<std::vector<int> >(vec, 1); }
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (!isSingleNumber(arg))
-            throw std::invalid_argument("Error: Invalid argument (not a single number).");
-
-        int num = std::stoi(arg);
-        if (num <= 0)
-            throw std::invalid_argument("Error: All numbers must be positive.");
-
-        vec.push_back(num);
-        deq.push_back(num);
-    }
-}
-
-void PmergeMe::printSequence(const std::string& msg, const std::vector<int>& vec) {
-    std::cout << msg;
-    for (int n : vec) std::cout << n << " ";
-    std::cout << std::endl;
+void PmergeMe::sort_deque(std::deque<int>& deque)
+{
+    _merge_insertion_sort<std::deque<int> >(deque, 1);
 }
