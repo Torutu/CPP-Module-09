@@ -1,41 +1,30 @@
 #include "PmergeMe.hpp"
+#include <ctime>
+#include <cstdlib>
 
-
-static bool validate_arg(const std::string& arg)
+static std::string validate_arg(std::string arg)
 {
-    if (arg[0] == '-') {
-        std::cerr << "Error: Negative numbers\n";
-        return false;
-    }
-
-    errno = 0; // reset errno before strtol
+    if (arg[0] == '-')
+        return "Negative numbers are not allowed";
     long nbr = strtol(arg.c_str(), NULL, 10);
-
-    if ((nbr == 0 && arg != "0") || errno == EINVAL) {
-        std::cerr << "Error: Non-number arguments\n";
-        return false;
-    }
-
-    if (nbr > INT_MAX || errno == ERANGE) {
-        std::cerr << "Error: Too big arguments\n";
-        return false;
-    }
-
-    return true;
+    if (nbr == 0 && arg != "0")
+        return "Non-number arguments not allowed";
+    if (nbr > INT_MAX || errno == ERANGE)
+        return "Too big arguments are not allowed";
+    return "";
 }
 
-static bool validate(int argc, char** argv)
+static std::string validate(int argc, char** argv)
 {
-    if (argc == 1) {
-        std::cerr << "Error: No arguments were provided\n";
-        return false;
+    if (argc == 1)
+        return "No arguments were provided";
+    for (int i = 1; i < argc; i++)
+    {
+        std::string status = validate_arg(argv[i]);
+        if (status != "")
+            return status;
     }
-
-    for (int i = 1; i < argc; i++) {
-        if (!validate_arg(argv[i]))
-            return false;
-    }
-    return true;
+    return "";
 }
 
 static std::vector<int> argv_to_vector(int argc, char** argv)
@@ -55,6 +44,16 @@ static std::deque<int> argv_to_deque(int argc, char** argv)
     for (int i = 1; i < argc; i++)
     {
         res.push_back(atoi(argv[i]));
+    }
+    return res;
+}
+
+static std::set<int> argv_to_set(int argc, char** argv)
+{
+    std::set<int> res;
+    for (int i = 1; i < argc; i++)
+    {
+        res.insert(atoi(argv[i]));
     }
     return res;
 }
@@ -102,27 +101,28 @@ static std::string vec_to_str(std::vector<int>& vec)
     return ss.str();
 }
 
-static bool retained_original_values(std::vector<int> original, std::vector<int>& sorted)
+static bool retained_original_values(std::set<int>& original_values, std::vector<int>& vec)
 {
-    if (original.size() != sorted.size())
-        return false;
-
-    std::sort(original.begin(), original.end());
-    std::vector<int> copy = sorted;
-    std::sort(copy.begin(), copy.end());
-
-    return original == copy;
+	for (int i = 0; i < (int)vec.size(); i++)
+	{
+		if (original_values.find(vec[i]) == original_values.end())
+			return false;
+		original_values.erase(vec[i]);
+	}
+	return true;
 }
-
 
 int main(int argc, char** argv)
 {
     PmergeMe pm;
 	
-    if (!validate(argc, argv)){
+    std::string status = validate(argc, argv);
+    if (status != "")
+    {
+        std::cerr << "Error: " << status << "\n";
         return EXIT_FAILURE;
     }
-	std::vector<int> original_values = argv_to_vector(argc, argv);
+	std::set<int> original_values = argv_to_set(argc, argv);
 
     clock_t start_vec = clock();
     std::vector<int> vec = argv_to_vector(argc, argv);
@@ -148,8 +148,8 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-    std::cout << "Before: " << argv_to_str(argc, argv) << "\n";
-    std::cout << "After: " << vec_to_str(vec) << "\n";
+    std::cout << "\033[31mBefore\033[00m: " << argv_to_str(argc, argv) << "\n";
+    std::cout << "\033[32mAfter\033[00m:  " << vec_to_str(vec) << "\n";
     std::cout << "Time to process a range of " << vec.size()
               << " elements with std::vector: " << std::fixed << std::setprecision(6)
               << time_elapsed_vec << "s\n";
