@@ -1,6 +1,8 @@
 #ifndef BITCOINEXCHANGE_HPP
 #define BITCOINEXCHANGE_HPP
 
+// #define BTC_DEBUG
+
 #include <map>
 
 #include <fstream>

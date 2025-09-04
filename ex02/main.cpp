@@ -78,26 +78,24 @@ static std::string argv_to_str(int argc, char** argv)
 {
     std::string res("");
     res.reserve(argc + 1);
-    res += "[";
     res += argv[1];
     for (int i = 2; argv[i]; i++)
     {
         res += " ";
         res += argv[i];
     }
-    res += "]";
     return res;
 }
 
 static std::string vec_to_str(std::vector<int>& vec)
 {
     std::stringstream ss;
-    ss << "[" << vec[0];
+    ss << "" << vec[0];
     for (size_t i = 1; i < vec.size(); i++)
     {
         ss << " " << vec[i];
     }
-    ss << "]";
+    ss << "";
     return ss.str();
 }
 
@@ -127,36 +125,36 @@ int main(int argc, char** argv)
     clock_t start_vec = clock();
     std::vector<int> vec = argv_to_vector(argc, argv);
     #ifdef PMERGE_DEBUG
-    std::cout << "vec: " << vec_to_str(vec) << "\n";
+        std::cout << "vec: " << vec_to_str(vec) << "\n";
     #endif
     pm.sort_vec(vec);
     clock_t end_vec = clock();
     double time_elapsed_vec = static_cast<double>(end_vec - start_vec) / CLOCKS_PER_SEC;
     #ifdef PMERGE_DEBUG
-    std::cout << "\n";
+        std::cout << "\n";
     #endif
 
 	PmergeMe::nbr_of_comps = 0;
     clock_t start_deque = clock();
     std::deque<int> deque = argv_to_deque(argc, argv);
     #ifdef PMERGE_DEBUG
-    std::cout << "deque: " << vec_to_str(vec) << "\n";
+        std::cout << "deque: " << vec_to_str(vec) << "\n";
     #endif
     pm.sort_deque(deque);
     clock_t end_deque = clock();
     double time_elapsed_deque = static_cast<double>(end_deque - start_deque) / CLOCKS_PER_SEC;
     #ifdef PMERGE_DEBUG
-    std::cout << "\n";
+        std::cout << "\n";
     #endif
 
     if (!is_sorted(vec) || (int)deque.size() != (argc - 1) || !retained_original_values(original_values, vec))
 	{
-        std::cout << "Vector was not sorted properly.\n";
+        std::cerr << "Vector was not sorted properly.\n";
 		return 1;
 	}
     if (!is_sorted(deque) || (int)deque.size() != (argc - 1))
 	{
-        std::cout << "Deque was not sorted properly.\n";
+        std::cerr << "Deque was not sorted properly.\n";
 		return 1;
 	}
 
@@ -168,5 +166,7 @@ int main(int argc, char** argv)
     std::cout << "Time to process a range of " << vec.size()
               << " elements with std::deque:  " << std::fixed << std::setprecision(6)
               << time_elapsed_deque << "s\n";
+    #ifdef PMERGE_DEBUG
 	std::cout << "Number of comparisons: " << PmergeMe::nbr_of_comps << '\n';
+    #endif
 }

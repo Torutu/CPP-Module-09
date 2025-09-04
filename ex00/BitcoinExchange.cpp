@@ -32,7 +32,6 @@ void BitcoinExchange::loadDatabase(const std::string& filename) {
     }
 }
 
-//open input.txt and read
 void BitcoinExchange::processInput(const std::string& filename) {
     std::ifstream file(filename.c_str());
     if (!file.is_open()) {
@@ -48,7 +47,9 @@ void BitcoinExchange::processInput(const std::string& filename) {
 
             date.erase(date.find_last_not_of(' ') + 1);
             valueStr.erase(0, valueStr.find_first_not_of(' '));
- 
+            #ifdef DEBUG_BTC
+            std::cout << date << "\n";
+            #endif
             if (!isValidDate(date)) {
                 std::cerr << "Error: bad input => " << date << std::endl;
                 continue;
@@ -69,10 +70,31 @@ void BitcoinExchange::processInput(const std::string& filename) {
 }
 
 bool BitcoinExchange::isValidDate(const std::string& date) const {
-    // Basic date format validation (e.g., 2011-01-03)
     if (date.length() != 10 || date[4] != '-' || date[7] != '-') {
         return false;
     }
+    int year, month, day;
+    char sep1, sep2;
+
+    std::istringstream iss(date);
+    if (!(iss >> year >> sep1 >> month >> sep2 >> day)) {
+        return false;
+    }
+
+    if (sep1 != '-' || sep2 != '-') return false;
+
+    if (month < 1 || month > 12) return false;
+
+    int daysInMonth[] = { 31, 28, 31, 30, 31, 30,
+                          31, 31, 30, 31, 30, 31 };
+
+    // Check for leap year
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        daysInMonth[1] = 29;
+    }
+
+    if (day < 1 || day > daysInMonth[month - 1]) return false;
+
     return true;
 }
 
@@ -84,15 +106,20 @@ std::string BitcoinExchange::findClosestDate(const std::string& date) const {
     auto it = _bitcoinPrices.lower_bound(date);
 
     if (it != _bitcoinPrices.end() && it->first == date) {
-        // std::cout << "exact date\n";
+        #ifdef BTC_DEBUG
+        std::cout << "exact date\n";
+        #endif
         return it->first;
     }
     if (it == _bitcoinPrices.begin()) {
-        // std::cout << "before or earliest date\n";
+        #ifdef BTC_DEBUG
+        std::cout << "before or earliest date\n";
+        #endif
         return it->first;
     }
-    // std::cout << "closest earlier date\n";
+    #ifdef BTC_DEBUG
+    std::cout << "closest earlier date\n";
+    #endif
     --it;
     return it->first;
 }
-

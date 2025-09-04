@@ -39,12 +39,12 @@ bool RPN::isNumber(const std::string& token) const {
         if (!isdigit(token[i])) return false;
     }
 
-    int value = std::stoi(token);
+    double value = std::stoi(token);
     return value >= -9 && value <= 9;
 }
 
-int RPN::calculate() {
-    _stack = std::stack<int>();
+double RPN::calculate() {
+    _stack = std::stack<double>();
     std::stringstream ss(_expression);
     std::string token;
 
@@ -56,7 +56,7 @@ int RPN::calculate() {
             _stack.push(std::stoi(token));
         } else if (token == "+" || token == "-" || token == "*" || token == "/") {
         #ifdef RPN_DEBUG
-            std::stack<int> tempStack = _stack;
+            std::stack<double> tempStack = _stack;
             std::cout << "Stack contents: ";
             while (!tempStack.empty()) {
                 std::cout << tempStack.top() << " ";
@@ -67,9 +67,9 @@ int RPN::calculate() {
             if (_stack.size() < 2)
                 throw std::invalid_argument("Error: Not enough operands.");
 
-            int b = _stack.top(); _stack.pop();
-            int a = _stack.top(); _stack.pop();
-            int result;
+            double b = _stack.top(); _stack.pop();
+            double a = _stack.top(); _stack.pop();
+            double result;
         #ifdef RPN_DEBUG
             std::cout << "Operands: a = " << a << ", b = " << b << "\n";
         #endif

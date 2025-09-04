@@ -1,7 +1,7 @@
 #ifndef RPN_HPP
 #define RPN_HPP
 
-#define RPN_DEBUG
+// #define RPN_DEBUG
 
 #include <stack>
 
@@ -14,7 +14,7 @@
 class RPN {
 private:
     std::string _expression;
-    std::stack<int> _stack;
+    std::stack<double> _stack;
 
     bool isNumber(const std::string& token) const;
 
@@ -28,7 +28,7 @@ public:
     void setExpression(const std::string& expr);
     std::string getExpression() const;
 
-    int calculate();
+    double calculate();
 };
 
 #endif
