@@ -1,6 +1,8 @@
 #ifndef PMERGEME_HPP
 #define PMERGEME_HPP
 
+// #define PMERGE_DEBUG
+
 #include <deque>
 #include <vector>
 #include <set>
@@ -117,7 +119,8 @@ void PmergeMe::_build_main_and_pend(
         pend.insert(pend.end(), std::next(end, pair_level - 1));
     }
 }
-
+// jabotsthal numbers: 1, 1, 3, 5, 11, 21, 43, 85, 171, ...
+// jacob formula: J(n) = round((2^(n+1) + (-1)^n) / 3)
 template <typename Iterator>
 void PmergeMe::_insert_pend_jacobsthal(
     std::vector<Iterator>& main,
@@ -131,28 +134,48 @@ void PmergeMe::_insert_pend_jacobsthal(
         int jacobsthal_diff = curr_jacobsthal - prev_jacobsthal;
         int offset = 0;
 
+        // Stop if there are not enough pend elements left.
         if (jacobsthal_diff > static_cast<int>(pend.size()))
             break;
 
         int nbr_of_times = jacobsthal_diff;
         typename std::vector<Iterator>::iterator pend_it =
-            std::next(pend.begin(), jacobsthal_diff - 1);
+            std::next(pend.begin(), jacobsthal_diff - 1); // points from the last of the current batch.
         typename std::vector<Iterator>::iterator bound_it =
-            std::next(main.begin(), curr_jacobsthal + inserted_numbers);
+            std::next(main.begin(), curr_jacobsthal + inserted_numbers); // Exclusive upper bound.
+
+            #ifdef PMERGE_DEBUG
+                    std::cout << "[Jacob] k=" << k
+                  << " curr=" << curr_jacobsthal
+                  << " prev=" << prev_jacobsthal
+                  << " diff=" << jacobsthal_diff
+                  << " | pend size=" << pend.size() << "\n";
+            #endif
 
         while (nbr_of_times) {
             typename std::vector<Iterator>::iterator idx =
-                std::upper_bound(main.begin(), bound_it, *pend_it, _comp<Iterator>);
+                std::upper_bound(main.begin(), bound_it, *pend_it, _comp<Iterator>); // Find insertion index.
             typename std::vector<Iterator>::iterator inserted =
-                main.insert(idx, *pend_it);
+                main.insert(idx, *pend_it); // Insert the element from pend into main.
+
+            #ifdef PMERGE_DEBUG
+                    std::cout << "     inserting pend=" << **pend_it
+                  << " at position " << (inserted - main.begin()) << "\n";
+            #endif
 
             nbr_of_times--;
             pend_it = pend.erase(pend_it);
             std::advance(pend_it, -1);
 
-            // Handle eclipsed bound
             offset += (inserted - main.begin()) == curr_jacobsthal + inserted_numbers;
             bound_it = std::next(main.begin(), curr_jacobsthal + inserted_numbers - offset);
+
+            #ifdef PMERGE_DEBUG
+                                std::cout << "     main now: ";
+            for (auto it = main.begin(); it != main.end(); ++it)
+                std::cout << **it << " ";
+            std::cout << "\n";
+            #endif
         }
 
         prev_jacobsthal = curr_jacobsthal;
@@ -161,61 +184,102 @@ void PmergeMe::_insert_pend_jacobsthal(
     }
 }
 
-template <typename T> void PmergeMe::_merge_insertion_sort(T& container, int pair_level)
+template <typename T>
+void PmergeMe::_merge_insertion_sort(T& container, int pair_level)
 {
     typedef typename T::iterator Iterator;
 
     int pair_units_nbr = container.size() / pair_level;
-    if (pair_units_nbr < 2)
-        return;
+    if (pair_units_nbr < 2) return;
     bool is_odd = pair_units_nbr % 2 == 1;
 
-    Iterator start = container.begin();
-    Iterator last = next(container.begin(), pair_level * (pair_units_nbr));
-    Iterator end = next(last, -(is_odd * pair_level));
+    Iterator start = container.begin();                           // start of first full pair
+    Iterator last  = std::next(container.begin(), pair_level * pair_units_nbr); // past-end of last full pair(s)
+    Iterator end   = std::next(last, -(is_odd * pair_level));    // past-end of last EVEN pair block
+
+#ifdef PMERGE_DEBUG
+    auto idx = [&](Iterator it){ return std::distance(container.begin(), it); };
+    std::cout << "\n[L" << pair_level << "] pair_units=" << pair_units_nbr
+              << " is_odd=" << is_odd
+              << " | range: start=" << idx(start)
+              << " last="  << idx(last)
+              << " end="   << idx(end)  << "\n";
+
+    std::cout << "[L" << pair_level << "] before swap: ";
+    { size_t shown=0; for (auto v: container){ if (shown++==32) {std::cout<<"..."; break;} std::cout<<v<<" "; } }
+    std::cout << "\n";
+#endif
 
     _swap_pairs_in_range(start, end, pair_level);
+
+#ifdef PMERGE_DEBUG
+    std::cout << "[L" << pair_level << "] after  swap:  ";
+    { size_t shown=0; for (auto v: container){ if (shown++==32) {std::cout<<"..."; break;} std::cout<<v<<" "; } }
+    std::cout << "\n";
+#endif
+
+    // Recurse to build bigger sorted blocks
     _merge_insertion_sort(container, pair_level * 2);
 
-    std::vector<Iterator> main;
-    std::vector<Iterator> pend;
-
-    /* Initialize the main chain with the {b1, a1}. */
+    // Build main/pend
+    std::vector<Iterator> main, pend;
     _build_main_and_pend(container, pair_units_nbr, pair_level, is_odd, end, main, pend);
+
+#ifdef PMERGE_DEBUG
+    std::cout << "[L" << pair_level << "] main vals: ";
+    for (auto it : main) std::cout << *it << " ";
+    std::cout << "\n";
+    std::cout << "[L" << pair_level << "] pend vals: ";
+    for (auto it : pend) std::cout << *it << " ";
+    std::cout << "\n";
+#endif
+
+    // Jacobsthal batch inserts
     _insert_pend_jacobsthal(main, pend);
 
-    /* Insert the remaining pend elements (if any) in reverse order. */
-    for (ssize_t i = pend.size() - 1; i >= 0; i--)
+#ifdef PMERGE_DEBUG
+    std::cout << "[L" << pair_level << "] after jacobsthal: main size=" << main.size()
+              << " pend size=" << pend.size() << "\n";
+#endif
+
+    // Insert remaining pend in reverse
+    for (std::ptrdiff_t i = static_cast<std::ptrdiff_t>(pend.size()) - 1; i >= 0; --i)
     {
-        typename std::vector<Iterator>::iterator curr_pend = next(pend.begin(), i);
+        typename std::vector<Iterator>::iterator curr_pend  = std::next(pend.begin(), i);
         typename std::vector<Iterator>::iterator curr_bound =
-            next(main.begin(), main.size() - pend.size() + i + is_odd);
-        typename std::vector<Iterator>::iterator idx =
+            std::next(main.begin(), main.size() - pend.size() + i + is_odd);
+        typename std::vector<Iterator>::iterator idx_it =
             std::upper_bound(main.begin(), curr_bound, *curr_pend, _comp<Iterator>);
-        main.insert(idx, *curr_pend);
+        main.insert(idx_it, *curr_pend);
     }
 
-    /* Create a copy of the sorted values. */
+#ifdef PMERGE_DEBUG
+    std::cout << "[L" << pair_level << "] main vals (final): ";
+    for (auto it : main) std::cout << *it << " ";
+    std::cout << "\n";
+#endif
+
+    // Flatten to copy
     std::vector<int> copy;
     copy.reserve(container.size());
-    for (typename std::vector<Iterator>::iterator it = main.begin(); it != main.end(); it++)
+    for (typename std::vector<Iterator>::iterator it = main.begin(); it != main.end(); ++it)
     {
-        for (int i = 0; i < pair_level; i++)
+        for (int i = 0; i < pair_level; ++i)
         {
             Iterator pair_start = *it;
             std::advance(pair_start, -pair_level + i + 1);
-            copy.insert(copy.end(), *pair_start);
+            copy.push_back(*pair_start);
         }
     }
 
-    /* Replace values in the original container. */
-    Iterator container_it = container.begin();
-    std::vector<int>::iterator copy_it = copy.begin();
-    while (copy_it != copy.end())
-    {
-        *container_it = *copy_it;
-        container_it++;
-        copy_it++;
-    }
+    // Write back
+    std::copy(copy.begin(), copy.end(), container.begin());
+
+#ifdef PMERGE_DEBUG
+    std::cout << "[L" << pair_level << "] wrote back: ";
+    { size_t shown=0; for (auto v: container){ if (shown++==32) {std::cout<<"..."; break;} std::cout<<v<<" "; } }
+    std::cout << "\n";
+#endif
 }
+
 #endif

@@ -1,6 +1,8 @@
 #ifndef RPN_HPP
 #define RPN_HPP
 
+#define RPN_DEBUG
+
 #include <stack>
 
 #include <iostream>
